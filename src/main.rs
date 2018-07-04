@@ -38,12 +38,35 @@ fn file_exists(filename: &str) -> bool {
 }
 
 // Quick check to see if the timer is running
-fn print_status () {
+fn print_status () -> Result<(), Box<Error>>  {
     if file_exists("timer.csv") {
         println!("Timer is running");
+        // read start timer struct from timer file
+        let file = OpenOptions::new()
+            .read(true)
+            .create(false)
+            .append(false)
+            .open("timer.csv")
+            .unwrap();
+        let mut rdr = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(file);
+        for result in rdr.deserialize() {
+            let timer: Timer = result?;
+
+            // setup current time
+            let current_time = SystemTime::now();
+            let stop_time = current_time.duration_since(UNIX_EPOCH)
+                .expect("Time went backwards");
+
+            // calculate time difference
+            let time_difference=stop_time.as_secs()-timer.start_time;
+            println!("Timer: {} running {} hrs {} mins", timer.project_code, time_difference/60/60, time_difference/60%60);
+        }
     } else {
         println!("There is no timer running");
     }
+    Ok(())
 }
 
 fn print_usage(program: &str, opts: Options) {
@@ -128,6 +151,7 @@ fn stop_timer() -> Result<(), Box<Error>> {
 
             // calculate time difference
             let time_difference=stop_time.as_secs()-timer.start_time;
+            println!("Timer has been running {} hrs {} mins", time_difference/60/60, time_difference/60%60);
 
             // take timer data and add it to the log file along with the current time and the delta
             let mut file = OpenOptions::new()
@@ -231,7 +255,7 @@ fn main() {
         println! ("Stopping timer...");
         stop_timer ().expect("Error stopping timer");
     } else if command=="status" {
-        print_status ();
+        print_status ().expect("Unable to parse log file");
     } else if command=="hours" {
         print_hours().expect("Unable to parse log file");
     };
