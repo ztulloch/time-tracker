@@ -78,6 +78,7 @@ fn print_usage(program: &str, opts: Options) {
 fn print_hours() -> Result<(), Box<Error>> {
     if file_exists("logger.csv") {
         // read start timer struct from timer file
+        let mut counter=0;
         let file = OpenOptions::new()
             .read(true)
             .create(false)
@@ -91,8 +92,10 @@ fn print_hours() -> Result<(), Box<Error>> {
             let unit: Unit = result?;
             if unit.duration>120 { // ignore anything less than 2 minutes
                 println!("Project: {}       date {} duration {} hrs {} mins", unit.project_code, unit.start_time, unit.duration/60/60, unit.duration/60%60);
+                counter+=unit.duration;
             }
         };
+        println!("Total is {} hours {} minutes.", counter/60/60, counter/60%60);
     } else {
         println!("Unable to find logfile.");
     }
@@ -126,6 +129,9 @@ fn start_timer (project_code: &str) {
         }).expect ("Error creating timer file");
         
         wtr.flush().expect("Error creating timer");
+
+        println! ("Starting timer for project {}...", project_code);
+
     }
 }
 
@@ -151,27 +157,31 @@ fn stop_timer() -> Result<(), Box<Error>> {
 
             // calculate time difference
             let time_difference=stop_time.as_secs()-timer.start_time;
-            println!("Timer has been running {} hrs {} mins", time_difference/60/60, time_difference/60%60);
+            if time_difference>120 {
+                println!("Timer has been running {} hrs {} mins", time_difference/60/60, time_difference/60%60);
 
-            // take timer data and add it to the log file along with the current time and the delta
-            let mut file = OpenOptions::new()
-                .write(true)
-                .create(true)
-                .append(true)
-                .open("logger.csv")
-                .unwrap();
-            let mut wtr = csv::WriterBuilder::new()
-                .has_headers(false)
-                .from_writer(file);
-
-            wtr.serialize(Unit {
-                project_code: timer.project_code,
-                start_time: timer.start_time,
-                end_time: stop_time.as_secs(),
-                duration: time_difference,
-            }).expect("Error writing logfile");
-            
-            wtr.flush().expect("Error writing logfile");
+                // take timer data and add it to the log file along with the current time and the delta
+                let mut file = OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .append(true)
+                    .open("logger.csv")
+                    .unwrap();
+                let mut wtr = csv::WriterBuilder::new()
+                    .has_headers(false)
+                    .from_writer(file);
+                
+                wtr.serialize(Unit {
+                    project_code: timer.project_code,
+                    start_time: timer.start_time,
+                    end_time: stop_time.as_secs(),
+                    duration: time_difference,
+                }).expect("Error writing logfile");
+                
+                wtr.flush().expect("Error writing logfile");
+            } else {
+                println!("Timer has been running for less than 2 minutes, discarding...");
+            }
             // remove timer
             fs::remove_file("timer.csv").expect("Error deleting timer.");
         }
@@ -249,7 +259,6 @@ fn main() {
     };
     
     if command=="start" {
-        println! ("Starting timer...");
         start_timer (&project_code);
     } else if command=="stop" {
         println! ("Stopping timer...");
