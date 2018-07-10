@@ -12,6 +12,9 @@ extern crate serde_derive;
 
 use getopts::Options;
 
+extern crate chrono;
+use chrono::prelude::*;
+
 // Struct for entries in the project logging file
 #[derive(Debug, Deserialize, Serialize)]
 struct Unit {
@@ -91,7 +94,9 @@ fn print_hours() -> Result<(), Box<Error>> {
         for result in rdr.deserialize() {
             let unit: Unit = result?;
             if unit.duration>120 { // ignore anything less than 2 minutes
-                println!("Project: {}       date {} duration {} hrs {} mins", unit.project_code, unit.start_time, unit.duration/60/60, unit.duration/60%60);
+                let naive_datetime = NaiveDateTime::from_timestamp(unit.start_time as i64, 0);
+                let datetime_again: DateTime<Utc> = DateTime::from_utc(naive_datetime, Utc);
+                println!("Project: {}       date {:?} duration {} hrs {} mins", unit.project_code, datetime_again, unit.duration/60/60, unit.duration/60%60);
                 counter+=unit.duration;
             }
         };
