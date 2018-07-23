@@ -26,4 +26,37 @@ mod cli {
             .unwrap();
     }
 
+    #[test]
+    fn start_timer() {
+        assert_cli::Assert::main_binary()
+            .with_args(&["start"])
+            .succeeds()
+            .and()
+            .stdout()
+            .contains("Starting")
+            .unwrap();
+    }
+
+
+    #[test]
+    fn start_second_timer() {
+        assert_cli::Assert::main_binary()
+            .with_args(&["start"])
+            .succeeds()
+            .and()
+            .stdout()
+            .contains("running")
+            .unwrap();
+    }
+
+    #[test]
+    fn stop_timer() {
+        assert_cli::Assert::main_binary()
+            .with_args(&["stop"])
+            .succeeds()
+            .and()
+            .stdout()
+            .contains("Stopping")
+            .unwrap();
+    }
 }
