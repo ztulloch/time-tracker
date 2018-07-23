@@ -102,7 +102,7 @@ fn print_hours() -> Result<(), Box<Error>> {
         };
         println!("Total is {} hours {} minutes.", counter/60/60, counter/60%60);
     } else {
-        println!("Unable to find logfile.");
+        println!("Unable to Total. No logfile.");
     }
 
 
