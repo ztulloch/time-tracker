@@ -22,7 +22,7 @@ mod cli {
             .succeeds()
             .and()
             .stdout()
-            .contains("tt")
+            .contains("tracker")
             .unwrap();
     }
 
