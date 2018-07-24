@@ -117,6 +117,7 @@ fn print_hours() -> Result<(), Box<Error>> {
 
 // print hours tracked in terms of weeks
 // need to extend to print on project basis
+// would also be useful to have a grand total
 fn print_weeks() -> Result<(), Box<Error>> {
     if file_exists("logger.csv") {
         // read start timer struct from timer file
