@@ -40,7 +40,7 @@ fn file_exists(filename: &str) -> bool {
     }
 }
 
-// Quick check to see if the timer is running
+// Check to see if the timer is running
 fn print_status () -> Result<(), Box<Error>>  {
     if file_exists("timer.csv") {
         println!("Timer is running");
@@ -69,15 +69,20 @@ fn print_status () -> Result<(), Box<Error>>  {
     } else {
         println!("There is no timer running");
     }
+    // Also might be useful just to print what week we're on
+    let naive_date_time = Utc::now().naive_utc();
+    println!("Week {} Month {} Day {} ", naive_date_time.iso_week().week(), naive_date_time.month(), naive_date_time.day());
+
     Ok(())
 }
 
 fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} start/stop/status/hours [options]", program);
+    let brief = format!("Usage: {} start/stop/status/hours/weeks [options]", program);
     print!("{}", opts.usage(&brief));
 }
 
 // initial print hours function just to test reading in log file
+// Just reads the log csv file and prints it out
 fn print_hours() -> Result<(), Box<Error>> {
     if file_exists("logger.csv") {
         // read start timer struct from timer file
@@ -102,7 +107,7 @@ fn print_hours() -> Result<(), Box<Error>> {
         };
         println!("Total is {} hours {} minutes.", counter/60/60, counter/60%60);
     } else {
-        println!("Unable to find logfile.");
+        println!("Unable to Total. No logfile.");
     }
 
 
@@ -110,6 +115,48 @@ fn print_hours() -> Result<(), Box<Error>> {
 
 }
 
+// print hours tracked in terms of weeks
+// need to extend to print on project basis
+fn print_weeks() -> Result<(), Box<Error>> {
+    if file_exists("logger.csv") {
+        // read start timer struct from timer file
+        let mut counter=0;
+        let mut week_pointer = 0;
+        let file = OpenOptions::new()
+            .read(true)
+            .create(false)
+            .append(false)
+            .open("logger.csv")
+            .unwrap();
+        let mut rdr = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .from_reader(file);
+        for result in rdr.deserialize() {
+            let unit: Unit = result?;
+            if unit.duration>120 { // ignore anything less than 2 minutes
+                let naive_datetime = NaiveDateTime::from_timestamp(unit.start_time as i64, 0);
+                if week_pointer==naive_datetime.iso_week().week() {
+                    counter+=unit.duration;
+                } else {
+                    if counter!=0 {
+                        println!("Week {} Hours {} hours {} minutes", week_pointer, counter/60/60, counter/60%60);
+                    }
+                    counter=0;
+                    week_pointer=naive_datetime.iso_week().week();
+                }
+            }
+        };
+        println!("Week {} Hours {} hours {} minutes", week_pointer, counter/60/60, counter/60%60);
+    } else {
+        println!("Unable to Total. No logfile.");
+    }
+
+
+    Ok(())
+
+}
+
+// start timer - just writes the current time in seconds to a csv file
 fn start_timer (project_code: &str) {
     // don't start a new timer if one is running
     if file_exists("timer.csv") {
@@ -140,6 +187,7 @@ fn start_timer (project_code: &str) {
     }
 }
 
+// reads timer file and writes results to log file
 fn stop_timer() -> Result<(), Box<Error>> {
     if file_exists("timer.csv") {
         // read start timer struct from timer file
@@ -208,9 +256,9 @@ fn main() {
 
     let mut opts = Options::new();
     // -p PROJECT - project flag
-    opts.optopt("p", "", "set project code.", "CODE");
+    opts.optopt("p", "", "set user definable project code.", "CODE");
     // -d PROJECT - project directory
-    opts.optopt("d", "", "set working directory. Overrides $TIMERDIR", "CODE");
+    opts.optopt("d", "", "set working directory. Overrides $TIMERDIR environment variable.", "CODE");
     // -h help - print usage
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
@@ -272,6 +320,8 @@ fn main() {
         print_status ().expect("Unable to parse log file");
     } else if command=="hours" {
         print_hours().expect("Unable to parse log file");
+    } else if command=="weeks" {
+        print_weeks().expect("Unable to parse log file");
     };
 }
 
