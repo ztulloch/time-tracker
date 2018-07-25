@@ -22,7 +22,7 @@ timer weeks - prints all weekly totals
  - -d DIRECTORY Specify a directory for the files to be stored in. If the directory is on dropbox or some other synchronised location, then this allows projects to be used across systems. This overrides the $TIMERDIR environment variable which can also be used to specify a timer directory.
 
 ## TODO
-### Test across machines. Currently tested on Linux and Mac.
-### All the program currently does is read the log file and print out the contents. Need to add per project totals. Also should be able to do this on a weekly, monthly and user definable time period.
-### Loads of other things.
+ - Test across platforms. Currently only tested on Linux and Mac.
+ - Test across file hosting services. Currently only tested on DropBox.
+ - Loads of other things.
 

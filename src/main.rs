@@ -141,7 +141,7 @@ fn print_weeks() -> Result<(), Box<Error>> {
                     if counter!=0 {
                         println!("Week {} Hours {} hours {} minutes", week_pointer, counter/60/60, counter/60%60);
                     }
-                    counter=0;
+                    counter=unit.duration;
                     week_pointer=naive_datetime.iso_week().week();
                 }
             }
