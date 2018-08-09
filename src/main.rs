@@ -77,7 +77,7 @@ fn print_status () -> Result<(), Box<Error>>  {
 }
 
 fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} start/stop/status/hours/weeks [options]", program);
+    let brief = format!("Usage: {} start/stop/cancel/status/hours/weeks [options]", program);
     print!("{}", opts.usage(&brief));
 }
 
@@ -246,6 +246,17 @@ fn stop_timer() -> Result<(), Box<Error>> {
     Ok(())
 
 }
+// reads timer file and writes results to log file
+fn cancel_timer() -> Result<(), Box<Error>> {
+    if file_exists("timer.csv") {
+        // remove timer
+        fs::remove_file("timer.csv").expect("Error deleting timer.");
+        println!("Timer cancelled.");
+    } else {
+        println!("There is no running timer to cancel.");
+    }
+    Ok(())
+}
 
 fn main() {
     // parse program arguments using getopts crate
@@ -316,6 +327,8 @@ fn main() {
     } else if command=="stop" {
         println! ("Stopping timer...");
         stop_timer ().expect("Error stopping timer");
+    } else if command=="cancel" {
+        cancel_timer ().expect("Error cancelling timer");
     } else if command=="status" {
         print_status ().expect("Unable to parse log file");
     } else if command=="hours" {
