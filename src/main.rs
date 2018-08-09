@@ -335,6 +335,10 @@ fn main() {
         print_hours().expect("Unable to parse log file");
     } else if command=="weeks" {
         print_weeks().expect("Unable to parse log file");
+    } else {
+        println!("Unknown option `{}`.", command);
+        println!("");
+        print_usage(&program, opts);
     };
 }
 
