@@ -37,7 +37,6 @@ mod cli {
             .unwrap();
     }
 
-
     #[test]
     fn start_second_timer() {
         assert_cli::Assert::main_binary()
@@ -92,7 +91,7 @@ mod cli {
             .contains("Week")
             .unwrap();
     }
-    
+
     #[test]
     fn print_days() {
         assert_cli::Assert::main_binary()
