@@ -43,9 +43,11 @@ fn file_exists(filename: &str) -> bool {
 }
 
 // Check to see if the timer is running
-fn print_status() -> Result<(), Box<Error>> {
+fn print_status(quick: bool) -> Result<(), Box<Error>> {
     if file_exists("timer.csv") {
-        println!("Timer is running");
+        if !quick {
+            println!("Timer is running");
+        }
         // read start timer struct from timer file
         let file = OpenOptions::new()
             .read(true)
@@ -67,25 +69,35 @@ fn print_status() -> Result<(), Box<Error>> {
 
             // calculate time difference
             let time_difference = stop_time.as_secs() - timer.start_time;
-            println!(
-                "Timer: {} running {} hrs {} mins",
-                timer.project_code,
-                time_difference / 60 / 60,
-                time_difference / 60 % 60
-            );
+            if quick {
+                println!("{} {}m", timer.project_code, time_difference/60);
+            } else {
+                println!(
+                    "Timer: {} running {} hrs {} mins",
+                    timer.project_code,
+                    time_difference / 60 / 60,
+                    time_difference / 60 % 60
+                );
+            }
         }
     } else {
-        println!("There is no timer running");
+        if !quick {
+            println!("There is no timer running");
+        } else {
+            println!("None");
+        }
     }
     // Also might be useful just to print what week we're on
-    let naive_date_time = Utc::now().naive_utc();
-    println!(
-        "Week {} Month {} Day {} ",
-        naive_date_time.iso_week().week(),
-        naive_date_time.month(),
-        naive_date_time.day()
-    );
-
+    if !quick {
+        let naive_date_time = Utc::now().naive_utc();
+        println!(
+            "Week {} Month {} Day {} ",
+            naive_date_time.iso_week().week(),
+            naive_date_time.month(),
+            naive_date_time.day()
+        );
+    }
+    
     Ok(())
 }
 
@@ -264,7 +276,7 @@ fn stop_timer(quash: bool) -> Result<(), Box<Error>> {
                     .open("logger.csv")
                     .unwrap();
                 if existence {
-                    println!("Building write without any headers");
+//                    println!("Building write without any headers");
                     let mut wtr = csv::WriterBuilder::new()
                         .has_headers(false)
                         .from_writer(file);
@@ -279,7 +291,7 @@ fn stop_timer(quash: bool) -> Result<(), Box<Error>> {
 
                     wtr.flush().expect("Error writing logfile");
                 } else {
-                    println!("Building writer with headers");
+//                    println!("Building writer with headers");
                     let mut wtr = csv::WriterBuilder::new()
                         .has_headers(true)
                         .from_writer(file);
@@ -326,6 +338,7 @@ fn main() {
     let mut task = String::new(); //"default".to_string();
     let mut working_directory = "default".to_string();
     let mut quash = false; // override 120 second limit on timers
+    let mut quick = false; // quick flag
     let mut opts = Options::new();
     // -p PROJECT - project flag
     opts.optopt("p", "", "set user definable project code.", "CODE");
@@ -343,10 +356,16 @@ fn main() {
         "set project task. Short summary of task undertaken.",
         "CODE",
     );
-    // -q  - quash
+    // -q  - quick
     opts.optflag(
         "q",
-        "quash",
+        "quick",
+        "Quick status for tmux etc.",
+    );
+    // -o  - override
+    opts.optflag(
+        "o",
+        "override",
         "Overrides 2 minute limit. Useful for testing.",
     );
     // -h help - print usage
@@ -382,8 +401,13 @@ fn main() {
         }
     }
     // o override
-    if matches.opt_present("q") {
+    if matches.opt_present("o") {
         quash = true;
+    }
+
+    // q quick 
+    if matches.opt_present("q") {
+        quick = true;
     }
 
     let command = if !matches.free.is_empty() {
@@ -461,7 +485,7 @@ fn main() {
     } else if command == "cancel" {
         cancel_timer().expect("Error cancelling timer");
     } else if command == "status" {
-        print_status().expect("Unable to parse log file");
+        print_status(quick).expect("Unable to parse log file");
     } else if command == "hours" {
         print_hours(quash).expect("Unable to parse log file");
     } else if command == "weeks" {
