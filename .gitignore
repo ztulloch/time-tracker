@@ -5,3 +5,6 @@
 # ignore test files
 logger.csv
 timer.csv
+# VS Code files
+.vscode/
+time-tracker.code-workspace
